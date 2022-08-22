@@ -22,8 +22,8 @@ fetch_certs:
 		--info=NAME \
 		--password-file=$(RSYNCD_PASSWD) \
 		$(REMOTE_LETSENCRYPT_PATH) \
-		$(LETSENCRYPT_PATH) | \
-	grep .
+		$(LETSENCRYPT_PATH) #| \
+	# grep .
 
 ###############################################################################
 # Reload the nginx instance running on my reverse proxy docker-compose service
@@ -50,15 +50,11 @@ $(LETSENCRYPT_PATH)/live/$(PG_DOMAIN)/fullchain.pem: fetch_certs
 $(LETSENCRYPT_PATH)/live/$(PG_DOMAIN)/privkey.pem: fetch_certs
 
 $(PG_SSL_PATH)/server.crt: $(LETSENCRYPT_PATH)/live/$(PG_DOMAIN)/fullchain.pem
-	mkdir -p $(PG_SSL_PATH)
-	rsync --copy-links \
-		$(LETSENCRYPT_PATH)/live/$(PG_DOMAIN)/fullchain.pem \
-		$(PG_SSL_PATH)/server.crt
+	mkdir -p $(@D)
+	rsync --copy-links $< $@
 
 $(PG_SSL_PATH)/server.key: $(LETSENCRYPT_PATH)/live/$(PG_DOMAIN)/privkey.pem
-	mkdir -p $(PG_SSL_PATH)
-	rsync --copy-links \
-		$(LETSENCRYPT_PATH)/live/$(PG_DOMAIN)/privkey.pem \
-		$(PG_SSL_PATH)/server.key
+	mkdir -p $(@D)
+	rsync --copy-links $< $@
 
 refresh_pg: $(PG_SSL_PATH)/server.crt $(PG_SSL_PATH)/server.key
