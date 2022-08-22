@@ -22,8 +22,8 @@ fetch_certs:
 		--info=NAME \
 		--password-file=$(RSYNCD_PASSWD) \
 		$(REMOTE_LETSENCRYPT_PATH) \
-		$(LETSENCRYPT_PATH) #| \
-	# grep .
+		$(LETSENCRYPT_PATH) \
+	grep .
 
 ###############################################################################
 # Reload the nginx instance running on my reverse proxy docker-compose service
