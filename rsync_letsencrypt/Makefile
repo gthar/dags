@@ -3,7 +3,7 @@ WD=/var/lib/dags/rsync_letsencrypt
 SYNC=$(WD)/synced_files
 NGINX_RELOAD=$(WD)/nginx_reload
 
-.PHONY: all refresh_pg
+.PHONY: all refresh_pg force
 
 all: $(SYNC) $(NGINX_RELOAD) refresh_pg
 
@@ -17,12 +17,14 @@ LETSENCRYPT_PATH=/mnt/letsencrypt
 # If new files have been synced, their paths will be stored to the target.
 # This way, the other targets will run only when some certificate has been
 # updated.
+#
+# This target depends on the PHONY requirement `force` so that it always runs
 
 REMOTE_LETSENCRYPT_PATH=rsync://user@caladan/letsencrypt
 RSYNCD_PASSWD=/mnt/secrets/rsyncd_password
 RSYNC_OPTS=--archive --delete --acls --xattrs --compress --human-readable
 
-$(SYNC):
+$(SYNC): force
 	mkdir -p $(@D)
 	rsync \
 		$(RSYNC_OPTS) \
