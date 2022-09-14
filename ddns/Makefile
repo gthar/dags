@@ -1,19 +1,21 @@
 DOMAIN_NAME ?= monotremata.xyz
 RECORD_NAME ?= wg
 
+WD=/var/lib/dags/ddns
+
 API_URL = https://api.linode.com/v4
 GET_IP_URL = ifconfig.me/ip
-WORK_DIR = $(RECORD_NAME).$(DOMAIN_NAME)
+STATE_DIR = $(WD)/$(RECORD_NAME).$(DOMAIN_NAME)
 
-HOST_IP = $(WORK_DIR)/host_ip.txt
-DOMAIN_ID = $(WORK_DIR)/domain_id.txt
-RECORD_ID = $(WORK_DIR)/record_id.txt
-UPDATE_RECORD = $(WORK_DIR)/updated_record.txt
+HOST_IP = $(STATE_DIR)/host_ip.txt
+DOMAIN_ID = $(STATE_DIR)/domain_id.txt
+RECORD_ID = $(STATE_DIR)/record_id.txt
+UPDATE_RECORD = $(STATE_DIR)/updated_record
 
-TOKEN = $(shell pass linode.com/token)
+LINODE_TOKEN = $(shell cat /mnt/secrets/linode_token)
 
 CURL = curl --silent
-AUTH_CURL = $(CURL) -H "Authorization: Bearer $(TOKEN)"
+AUTH_CURL = $(CURL) -H "Authorization: Bearer $(LINODE_TOKEN)"
 
 define get_id
 	jq '.["data"][] | select(.["$(1)"] == "$(2)")["id"]'
@@ -25,7 +27,7 @@ endef
 # to update the record when that happens
 $(UPDATE_RECORD): $(HOST_IP) $(DOMAIN_ID) $(RECORD_ID)
 	@echo "updating record"
-	@$(AUTH_CURL) \
+	$(AUTH_CURL) \
         -H "Content-Type: application/json" \
         -X PUT -d '{ "target": "'"$$(cat $<)"'" }' \
         "$(API_URL)/domains/$$(cat $(DOMAIN_ID))/records/$$(cat $(RECORD_ID))"
@@ -61,4 +63,4 @@ $(HOST_IP): force
 	fi
 
 clean:
-	rm -r $(WORK_DIR)
+	rm -fr $(STATE_DIR)
