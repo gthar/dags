@@ -12,7 +12,7 @@ DOMAIN_ID = $(STATE_DIR)/domain_id.txt
 RECORD_ID = $(STATE_DIR)/record_id.txt
 UPDATE_RECORD = $(STATE_DIR)/updated_record
 
-LINODE_TOKEN = $(shell cat /mnt/secrets/linode_token)
+LINODE_TOKEN = $(shell gopass linode.com/token)
 
 CURL = curl --silent
 AUTH_CURL = $(CURL) -H "Authorization: Bearer $(LINODE_TOKEN)"
@@ -27,7 +27,7 @@ endef
 # to update the record when that happens
 $(UPDATE_RECORD): $(HOST_IP) $(DOMAIN_ID) $(RECORD_ID)
 	@echo "updating record"
-	$(AUTH_CURL) \
+	@$(AUTH_CURL) \
         -H "Content-Type: application/json" \
         -X PUT -d '{ "target": "'"$$(cat $<)"'" }' \
         "$(API_URL)/domains/$$(cat $(DOMAIN_ID))/records/$$(cat $(RECORD_ID))"
