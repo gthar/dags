@@ -14,32 +14,31 @@ all: sync_certs $(SMTPD_RESTART) $(DOVECOT_RELOAD)
 
 ###############################################################################
 
-CERTS_PATH=/srv/certs/acme
-
-MONOTREMATA_DOMAIN=monotremata.xyz
-MONOTREMATA_PATH=$(CERTS_PATH)/$(MONOTREMATA_DOMAIN)
-MONOTREMATA_CERT=$(MONOTREMATA_PATH)/fullchain.cer
-MONOTREMATA_KEY=$(MONOTREMATA_PATH)/$(MONOTREMATA_DOMAIN).key
+ACME_DIR=/srv/certs/acme
+DOMAIN=monotremata.xyz
+CERT_PATH=$(ACME_DIR)/$(DOMAIN)
+CERT=$(CERT_PATH)/fullchain.cer
+KEY=$(CERT_PATH)/$(DOMAIN).key
 
 ###############################################################################
 # Sync the certificates using rsync. Because `sync` is a phony
 # target, it will be run each time, but the certificate files will only be
 # updated if a renewal happens
 
-$(MONOTREMATA_CERT): $(SYNC_CERTS)
-$(MONOTREMATA_KEY): $(SYNC_CERTS)
+$(CERT): $(SYNC_CERTS)
+$(KEY): $(SYNC_CERTS)
 
 REMOTE_ACME_PATH=rsync://user@narwhal/acme
 RSYNCD_PASSWD=/srv/secrets/rsyncd_password
 RSYNC_OPTS=--archive --delete --compress --verbose --human-readable
 
 sync_certs:
-	mkdir -p $(CERTS_PATH)
+	mkdir -p $(ACME_DIR)
 	rsync \
 		$(RSYNC_OPTS) \
 		--password-file=$(RSYNCD_PASSWD) \
 		$(REMOTE_ACME_PATH) \
-		$(CERTS_PATH)
+		$(ACME_DIR)
 
 ###############################################################################
 
@@ -47,10 +46,10 @@ SSL_PATH=/etc/ssl
 CERT_DEST=$(SSL_PATH)/monotremata.xyz.fullchain.pem
 KEY_DEST=$(SSL_PATH)/private/monotremata.xyz.key
 
-$(CERT_DEST): $(MONOTREMATA_CERT)
+$(CERT_DEST): $(CERT)
 	install -m 444 $< $@
 
-$(KEY_DEST): $(MONOTREMATA_KEY)
+$(KEY_DEST): $(KEY)
 	install -m 400 $< $@
 
 ###############################################################################
