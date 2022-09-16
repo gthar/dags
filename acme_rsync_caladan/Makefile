@@ -9,8 +9,9 @@ all: sync_certs $(NGINX_RELOAD) $(PROSODY_RELOAD) refresh_pg
 
 ###############################################################################
 
+ACME_DIR=/srv/certs/acme/$(DOMAIN)
 DOMAIN=monotremata.xyz
-CERT_PATH=/srv/certs/acme/$(DOMAIN)
+CERT_PATH=$(ACME_DIR)/$(DOMAIN)
 CERT=$(CERT_PATH)/fullchain.cer
 KEY=$(CERT_PATH)/$(DOMAIN).key
 
@@ -27,12 +28,12 @@ RSYNCD_PASSWD=/srv/secrets/rsyncd_password
 RSYNC_OPTS=--archive --delete --acls --xattrs --compress --verbose --human-readable
 
 sync_certs:
-	mkdir -p $(CERT_PATH)
+	mkdir -p $(ACME_DIR)
 	rsync \
 		$(RSYNC_OPTS) \
 		--password-file=$(RSYNCD_PASSWD) \
 		$(REMOTE_ACME_PATH) \
-		$(CERTS_PATH)
+		$(ACME_DIR)
 
 ###############################################################################
 # Reload the nginx instance running on my reverse proxy docker-compose service
