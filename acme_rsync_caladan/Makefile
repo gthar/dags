@@ -9,7 +9,7 @@ all: sync_certs $(NGINX_RELOAD) $(PROSODY_RELOAD) refresh_pg
 
 ###############################################################################
 
-ACME_DIR=/srv/certs/acme/$(DOMAIN)
+ACME_DIR=/srv/certs/acme
 DOMAIN=monotremata.xyz
 CERT_PATH=$(ACME_DIR)/$(DOMAIN)
 CERT=$(CERT_PATH)/fullchain.cer
