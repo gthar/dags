@@ -10,7 +10,7 @@ all: sync_certs $(NGINX_RELOAD) $(PROSODY_RELOAD) refresh_pg
 ###############################################################################
 
 DOMAIN=monotremata.xyz
-CERT_PATH=/srv/certs/$(DOMAIN)
+CERT_PATH=/srv/certs/acme/$(DOMAIN)
 CERT=$(CERT_PATH)/fullchain.cer
 KEY=$(CERT_PATH)/$(DOMAIN).key
 
@@ -27,7 +27,7 @@ RSYNCD_PASSWD=/srv/secrets/rsyncd_password
 RSYNC_OPTS=--archive --delete --acls --xattrs --compress --verbose --human-readable
 
 sync_certs:
-	mkdir -p $(CERTS_PATH)
+	mkdir -p $(CERT_PATH)
 	rsync \
 		$(RSYNC_OPTS) \
 		--password-file=$(RSYNCD_PASSWD) \
