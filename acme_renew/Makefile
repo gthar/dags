@@ -8,41 +8,19 @@ all: renew_certs $(NGINX_RELOAD) refresh_pg
 
 ###############################################################################
 
-CERTS_PATH=/mnt/certs/acme
+DOMAIN=monotremata.xyz
+CERT_PATH=/mnt/certs/acme/$(DOMAIN)
 
-MONOTREMATA_DOMAIN=monotremata.xyz
-MONOTREMATA_PATH=$(CERTS_PATH)/$(MONOTREMATA_DOMAIN)
-MONOTREMATA_CERT=$(MONOTREMATA_PATH)/fullchain.cer
-MONOTREMATA_KEY=$(MONOTREMATA_PATH)/$(MONOTREMATA_DOMAIN).key
-
-NARWHAL_DOMAIN=narwhal.monotremata.xyz
-NARWHAL_PATH=$(CERTS_PATH)/$(NARWHAL_DOMAIN)
-NARWHAL_CERT=$(NARWHAL_PATH)/fullchain.cer
-NARWHAL_KEY=$(NARWHAL_PATH)/$(NARWHAL_DOMAIN).key
-
-CALADAN_DOMAIN=caladan.monotremata.xyz
-CALADAN_PATH=$(CERTS_PATH)/$(CALADAN_DOMAIN)
-CALADAN_CERT=$(CALADAN_PATH)/fullchain.cer
-CALADAN_KEY=$(CALADAN_PATH)/$(CALADAN_DOMAIN).key
-
-XMPP_DOMAIN=xmpp.monotremata.xyz
-XMPP_PATH=$(CERTS_PATH)/$(XMPP_DOMAIN)
-XMPP_CERT=$(XMPP_PATH)/fullchain.cer
-XMPP_KEY=$(XMPP_PATH)/$(XMPP_DOMAIN).key
+CERT=$(CERT_PATH)/fullchain.cer
+KEY=$(CERT_PATH)/$(DOMAIN).key
 
 ###############################################################################
 # Renew the certificates using acme.sh. Because `renew_certs` is a phony
 # target, it will be run each time, but the certificate files will only be
 # updated if a renewal happens
 
-$(MONOTREMATA_CERT): renew_certs
-$(MONOTREMATA_KEY): renew_certs
-$(NARWHAL_CERT): renew_certs
-$(NARWHAL_KEY): renew_certs
-$(CALADAN_CERT): renew_certs
-$(CALADAN_KEY): renew_certs
-$(XMPP_CERT): renew_certs
-$(XMPP_KEY): renew_certs
+$(CERT): renew_certs
+$(KEY): renew_certs
 
 ACMESH_COMPOSE_FILE=/srv/services/acmesh/docker-compose.yml
 
@@ -65,7 +43,7 @@ renew_certs:
 
 NGINX_COMPOSE_FILE=/srv/services/reverse_proxy/docker-compose.yml
 
-$(NGINX_RELOAD): $(MONOTREMATA_CERT) $(MONOTREMATA_KEY) $(NARWHAL_CERT) $(NARWHAL_KEY)
+$(NGINX_RELOAD): $(CERT) $(KEY)
 	mkdir -p $(@D)
 	docker-compose \
 		--file $(NGINX_COMPOSE_FILE) \
@@ -81,11 +59,11 @@ PG_SSL_PATH=/mnt/docker_volumes/postgres/ssl
 PG_CERT=$(PG_SSL_PATH)/server.crt
 PG_KEY=$(PG_SSL_PATH)/server.key
 
-$(PG_CERT): $(MONOTREMATA_CERT)
+$(PG_CERT): $(CERT)
 	mkdir -p $(@D)
 	rsync --copy-links $< $@
 
-$(PG_KEY): $(MONOTREMATA_KEY)
+$(PG_KEY): $(KEY)
 	mkdir -p $(@D)
 	rsync --copy-links $< $@
 
