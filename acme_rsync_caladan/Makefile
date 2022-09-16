@@ -1,12 +1,14 @@
 WD=/var/lib/dags/acme_rsync
 
-.PHONY: all refresh_pg renew_certs
+.PHONY: all refresh_pg sync_certs
 
 NGINX_RELOAD=$(WD)/nginx_reload
+PROSODY_IMPORT_XMPP=$(WD)/prosody_import_xmpp
+PROSODY_IMPORT_MONOTREMATA=$(WD)/prosody_import_monotremata
 PROSODY_IMPORT=$(WD)/prosody_import
 PROSODY_RELOAD=$(WD)/prosody_reload
 
-all: sync_certs $(NGINX_RELOAD) refresh_pg
+all: sync_certs $(NGINX_RELOAD) $(PROSODY_RELOAD) refresh_pg
 
 ###############################################################################
 
@@ -33,7 +35,7 @@ XMPP_CERT=$(XMPP_PATH)/fullchain.cer
 XMPP_KEY=$(XMPP_PATH)/$(XMPP_DOMAIN).key
 
 ###############################################################################
-# Renew the certificates using acme.sh. Because `renew_certs` is a phony
+# Sync the certificates using rsync. Because `sync` is a phony
 # target, it will be run each time, but the certificate files will only be
 # updated if a renewal happens
 
@@ -55,7 +57,7 @@ sync_certs:
 	rsync \
 		$(RSYNC_OPTS) \
 		--password-file=$(RSYNCD_PASSWD) \
-		$(REMOTE_LETSENCRYPT_PATH) \
+		$(REMOTE_ACME_PATH) \
 		$(CERTS_PATH)
 
 ###############################################################################
@@ -66,7 +68,7 @@ sync_certs:
 # So far, the nginx instance running on the `monotremata` certificates, so it
 # only needs to be reloaded that is updated
 
-NGINX_COMPOSE_FILE=/srv/services/reverse_proxy/docker-compose.yml
+NGINX_COMPOSE_FILE=/srv/services/www/docker-compose.yml
 
 $(NGINX_RELOAD): $(MONOTREMATA_CERT) $(MONOTREMATA_KEY)
 	mkdir -p $(@D)
@@ -78,22 +80,36 @@ $(NGINX_RELOAD): $(MONOTREMATA_CERT) $(MONOTREMATA_KEY)
 
 ###############################################################################
 
+PROSODY_CERTS_PATH=/srv/volumes/xmpp/certs
+
+PROSODY_MONOTREMATA_CERT=$(PROSODY_CERTS_PATH)/monotremata.xyz.crt
+PROSODY_MONOTREMATA_KEY=$(PROSODY_CERTS_PATH)/monotremata.xyz.key
+PROSODY_XMPP_CERT=$(PROSODY_CERTS_PATH)/xmpp.monotremata.xyz.crt
+PROSODY_XMPP_KEY=$(PROSODY_CERTS_PATH)/xmpp.monotremata.xyz.key
+
+PROSODY_UID=101
+PROSODY_GID=102
+
+PROSODY_INSTALL=install -o $(PROSODY_UID) -g $(PROSODY_GID)
+PROSODY_INSTALL_CERT=$(PROSODY_INSTALL) -m 644 $< $@
+PROSODY_INSTALL_KEY=$(PROSODY_INSTALL) -m 600 $< $@
+
+$(PROSODY_MONOTREMATA_CERT): $(MONOTREMATA_CERT)
+	$(PROSODY_INSTALL_CERT)
+$(PROSODY_MONOTREMATA_KEY): $(MONOTREMATA_KEY)
+	$(PROSODY_INSTALL_KEY)
+
+$(PROSODY_XMPP_CERT): $(XMPP_CERT)
+	$(PROSODY_INSTALL_CERT)
+$(PROSODY_XMPP_KEY): $(XMPP_KEY)
+	$(PROSODY_INSTALL_KEY)
+
 PROSODY_COMPOSE_FILE=/srv/services/xmpp/docker-compose.yml
 
-$(PROSODY_IMPORT): $(XMPP_CERT) $(XMPP_KEY)
+$(PROSODY_RELOAD): $(PROSODY_MONOTREMATA_CERT) $(PROSODY_MONOTREMATA_KEY) $(PROSODY_XMPP_CERT) $(PROSODY_XMPP_KEY)
 	mkdir -p $(@D)
-	docker-compose \
-		--file $(PROSODY_COMPOSE_FILE) \
-		exec prosody \
-		prosodyctl --root cert import /etc/letsencrypt/live
-	touch $@
-
-$(PROSODY_RELOAD): $(PROSODY_IMPORT)
-	mkdir -p $(@D)
-	docker-compose \
-		--file $(PROSODY_COMPOSE_FILE) \
-		exec prosody \
-		prosodyctl reload
+	docker-compose --file $(PROSODY_COMPOSE_FILE) exec \
+		prosody prosodyctl reload
 	touch $@
 
 ###############################################################################
