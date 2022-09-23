@@ -34,7 +34,8 @@ RSYNC_OPTS=--archive --delete --acls --xattrs --compress --verbose --human-reada
 
 sync_certs:
 	mkdir -p $(ACME_DIR)
-	RSYNC_PASSWORD=$(RSYNC_PASSWORD); \
+	@echo "running rsync"
+	@export RSYNC_PASSWORD=$(RSYNC_PASSWORD); \
 	rsync \
 		$(RSYNC_OPTS) \
 		$(REMOTE_ACME_PATH) \
