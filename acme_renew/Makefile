@@ -31,7 +31,8 @@ ACME_DATA_DIR=/mnt/docker_volumes/acmesh/data
 RENEW_CMD="/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh" --config-home "/acme.sh"
 
 renew_certs:
-	docker run --rm -it \
+	@echo "renewing certs"
+	@docker run --rm -it \
 		-v $(ACME_DATA_DIR):/acme.sh \
 		-v $(CERT_PATH):/acme.sh/$(DOMAIN) \
 		-e "LINODE_V4_API_KEY=$(LINODE_TOKEN)" \
