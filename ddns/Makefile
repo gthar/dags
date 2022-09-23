@@ -12,7 +12,8 @@ DOMAIN_ID = $(STATE_DIR)/domain_id.txt
 RECORD_ID = $(STATE_DIR)/record_id.txt
 UPDATE_RECORD = $(STATE_DIR)/updated_record
 
-LINODE_TOKEN = $(shell gopass linode.com/token)
+GOPASS=shell doas -u gopass gopass
+LINODE_TOKEN = $($(GOPASS) linode.com/token)
 
 CURL = curl --silent
 AUTH_CURL = $(CURL) -H "Authorization: Bearer $(LINODE_TOKEN)"
