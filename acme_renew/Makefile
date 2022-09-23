@@ -22,14 +22,20 @@ KEY=$(CERT_PATH)/$(DOMAIN).key
 $(CERT): renew_certs
 $(KEY): renew_certs
 
-ACMESH_COMPOSE_FILE=/srv/services/acmesh/docker-compose.yml
+GOPASS=doas -u gopass gopass
+LINODE_TOKEN = $(shell $(GOPASS) linode.com/token)
+
+DOCKER_IMAGE=neilpang/acme.sh
+ACME_DATA_DIR=/mnt/docker_volumes/acmesh/data
 
 RENEW_CMD="/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh" --config-home "/acme.sh"
 
 renew_certs:
-	docker-compose \
-		--file $(ACMESH_COMPOSE_FILE) \
-		run --rm acmesh \
+	docker run --rm -it \
+		-v $(ACME_DATA_DIR):/acme.sh \
+		-v $(CERT_PATH):/acme.sh/$(DOMAIN) \
+		-e "LINODE_V4_API_KEY=$(LINODE_TOKEN)" \
+		$(DOCKER_IMAGE) \
 		$(RENEW_CMD)
 
 ###############################################################################
