@@ -85,7 +85,7 @@ define post_secret
 endef
 
 define put_secret
-	$(call k8s_api,PUT) $(K8S_SECRERTS_URL)/$(SECRET_NAME) --data @$(1) |
+	$(call k8s_api,PUT) $(K8S_SECRERTS_URL)/$(SECRET_NAME) --data @$(1) | \
 	$(select_status_code)
 endef
 
