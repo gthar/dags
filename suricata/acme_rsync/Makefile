@@ -8,8 +8,8 @@ DOMAIN_CERTS_DIR = $(CERTS_DIR)/$(DOMAIN)
 ###############################################################################
 
 ACME_CA_FILE = $(DOMAIN_CERTS_DIR)/ca.cer
-ACME_FULLCHAIN_FILE = $(DOMAIN_CERTS_DIR)/fullchain.cer"
-ACME_KEY_FILE = $(DOMAIN_CERTS_DIR)/$(DOMAIN).key"
+ACME_FULLCHAIN_FILE = $(DOMAIN_CERTS_DIR)/fullchain.cer
+ACME_KEY_FILE = $(DOMAIN_CERTS_DIR)/$(DOMAIN).key
 
 ###############################################################################
 
@@ -19,10 +19,10 @@ SECRET_UPDATED = $(WD)/secret_updated
 ###############################################################################
 
 K8S_CA_FILE = /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-K8S_TOKEN_FILE = /var/run/secrets/kubernetes.io/serviceaccount/token)
+K8S_TOKEN_FILE = /var/run/secrets/kubernetes.io/serviceaccount/token
 K8S_TOKEN = $(shell cat $(K8S_TOKEN_FILE))
 K8S_APISERVER = $(KUBERNETES_SERVICE_HOST):$(KUBERNETES_SERVICE_PORT_HTTPS)
-K8S_SECRERTS_URL="https://${K8S_APISERVER}/api/v1/namespaces/${CERT_NAMESPACE}/secret
+K8S_SECRERTS_URL = https://$(K8S_APISERVER)/api/v1/namespaces/$(CERT_NAMESPACE)/secrets
 
 ###############################################################################
 
@@ -57,15 +57,8 @@ $(JSON_SECRET): $(ACME_KEY_FILE) $(ACME_FULLCHAIN_FILE) $(ACME_KEY_FILE)
 		--arg cacert "$$(base64 -w 0 $(ACME_CA_FILE))" \
 		--arg tlscert "$$(base64 -w 0 $(ACME_FULLCHAIN_FILE))" \
 		--arg tlskey "$$(base64 -w 0 $(ACME_KEY_FILE))" \
-		'{
-			kind: $$kind,
-			metadata: {name: $$name},
-			data: {
-				"ca.crt": $$cacert,
-				"tls.crt": $$tlscert,
-				"tls.key": $$tlskey
-			}
-		}' > $@
+		'{ kind: $$kind, metadata: {name: $$name}, data: { "ca.crt": $$cacert, "tls.crt": $$tlscert, "tls.key": $$tlskey }}' \
+		> $@
 
 ###############################################################################
 
@@ -98,15 +91,15 @@ endef
 
 $(SECRET_UPDATED): $(JSON_SECRET)
 	mkdir -p $(@D)
-	GET_STATUS_CODE=$$($(call get_secret)) \
+	GET_STATUS_CODE=$$($(call get_secret)); \
 	if [ "$${GET_STATUS_CODE}" = "404" ]; then \
-		echo "adding cert" \
-		POST_STATUS_CODE=$$($(call post_secret,$^)) \
-		[ "$${POST_STATUS_CODE}" = "200" ] && touch $@ \
+		echo "adding cert"; \
+		POST_STATUS_CODE=$$($(call post_secret,$^)); \
+		[ "$${POST_STATUS_CODE}" = "200" ] && touch $@; \
 	elif [ "$${GET_STATUS_CODE}" = "200" ]; then \
-		echo "updating existing cert" \
-		PUT_STATUS_CODE=$$($(call put_secret,$^)) \
-		[ "$${PUT_STATUS_CODE}" = "200" ] && touch $@ \
+		echo "updating existing cert"; \
+		PUT_STATUS_CODE=$$($(call put_secret,$^)); \
+		[ "$${PUT_STATUS_CODE}" = "200" ] && touch $@; \
 	fi
 
 ###############################################################################
