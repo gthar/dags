@@ -67,7 +67,7 @@ define k8s_api
 		--include \
 		--request $(1) \
         --write-out "%{http_code}" \
-        --output /dev/stderr \
+        --output /dev/null \
 		--cacert "$(K8S_CA_FILE)" \
 		--header "Authorization: Bearer $(K8S_TOKEN)" \
 		--header 'Accept: application/json' \
