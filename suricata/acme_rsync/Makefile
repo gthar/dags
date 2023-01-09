@@ -62,31 +62,28 @@ $(JSON_SECRET): $(ACME_KEY_FILE) $(ACME_FULLCHAIN_FILE) $(ACME_KEY_FILE)
 
 ###############################################################################
 
-select_status_code = grep 'HTTP/' | awk '{printf $$2}'
-
 define k8s_api
 	curl \
-		-i \
-		-X $(1) \
+		--include \
+		--request $(1) \
+        --write-out "%{http_code}" \
+        --output /dev/stderr \
 		--cacert "$(K8S_CA_FILE)" \
-		-H "Authorization: Bearer $(K8S_TOKEN)" \
-		-H 'Accept: application/json' \
-		-H "Content-Type: application/json"
+		--header "Authorization: Bearer $(K8S_TOKEN)" \
+		--header 'Accept: application/json' \
+		--header "Content-Type: application/json"
 endef
 
 define get_secret
-	$(call k8s_api,GET) $(K8S_SECRERTS_URL)/$(SECRET_NAME) | \
-	$(select_status_code)
+	$(call k8s_api,GET) $(K8S_SECRERTS_URL)/$(SECRET_NAME)
 endef
 
 define post_secret
-	$(call k8s_api,POST) $(K8S_SECRERTS_URL) --data @$(1) | \
-	$(select_status_code)
+	$(call k8s_api,POST) $(K8S_SECRERTS_URL) --data @$(1)
 endef
 
 define put_secret
-	$(call k8s_api,PUT) $(K8S_SECRERTS_URL)/$(SECRET_NAME) --data @$(1) | \
-	$(select_status_code)
+	$(call k8s_api,PUT) $(K8S_SECRERTS_URL)/$(SECRET_NAME) --data @$(1)
 endef
 
 $(SECRET_UPDATED): $(JSON_SECRET)
@@ -95,7 +92,7 @@ $(SECRET_UPDATED): $(JSON_SECRET)
 	if [ "$${GET_STATUS_CODE}" = "404" ]; then \
 		echo "adding cert"; \
 		POST_STATUS_CODE=$$($(call post_secret,$^)); \
-		[ "$${POST_STATUS_CODE}" = "200" ] && touch $@; \
+		[ "$${POST_STATUS_CODE}" = "201" ] && touch $@; \
 	elif [ "$${GET_STATUS_CODE}" = "200" ]; then \
 		echo "updating existing cert"; \
 		PUT_STATUS_CODE=$$($(call put_secret,$^)); \
