@@ -38,8 +38,9 @@ REMOTE_ACME_PATH=rsync://$(RSYNCD_USER)@$(RSYNCD_HOST)/acme
 RSYNC_OPTS=--archive --delete --acls --xattrs --compress --verbose --human-readable
 
 sync_certs:
-	mkdir -p $(CERTS_DIR)
-	rsync \
+	@mkdir -p $(CERTS_DIR)
+	@echo "pulling certs with rsync"X
+	@rsync \
 		$(RSYNC_OPTS) \
 		$(REMOTE_ACME_PATH) \
 		$(CERTS_DIR)
@@ -51,7 +52,8 @@ $(ACME_KEY_FILE): sync_certs
 ###############################################################################
 
 $(JSON_SECRET): $(ACME_KEY_FILE) $(ACME_FULLCHAIN_FILE) $(ACME_KEY_FILE)
-	jq --null-input --raw-output \
+	@echo "building json secret file"
+	@jq --null-input --raw-output \
 		--arg kind "Secret" \
 		--arg name "$(SECRET_NAME)" \
 		--arg cacert "$$(base64 -w 0 $(ACME_CA_FILE))" \
@@ -87,8 +89,8 @@ define put_secret
 endef
 
 $(SECRET_UPDATED): $(JSON_SECRET)
-	mkdir -p $(@D)
-	GET_STATUS_CODE=$$($(call get_secret)); \
+	@mkdir -p $(@D)
+	@GET_STATUS_CODE=$$($(call get_secret)); \
 	if [ "$${GET_STATUS_CODE}" = "404" ]; then \
 		echo "adding cert"; \
 		POST_STATUS_CODE=$$($(call post_secret,$^)); \
@@ -98,5 +100,6 @@ $(SECRET_UPDATED): $(JSON_SECRET)
 		PUT_STATUS_CODE=$$($(call put_secret,$^)); \
 		[ "$${PUT_STATUS_CODE}" = "200" ] && touch $@; \
 	fi
+	@echo "done"
 
 ###############################################################################
