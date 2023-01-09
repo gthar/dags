@@ -39,7 +39,7 @@ RSYNC_OPTS=--archive --delete --acls --xattrs --compress --verbose --human-reada
 
 sync_certs:
 	@mkdir -p $(CERTS_DIR)
-	@echo "pulling certs with rsync"X
+	@echo "pulling certs with rsync"
 	@rsync \
 		$(RSYNC_OPTS) \
 		$(REMOTE_ACME_PATH) \
