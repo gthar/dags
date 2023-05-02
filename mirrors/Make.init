@@ -1,0 +1,15 @@
+include Make.config
+
+################################################################################
+
+ALPINE_FOLDERS := $(foreach version,$(ALPINE_VERSIONS), \
+	$(foreach repo,$(ALPINE_SUBFOLDERS), \
+		$(foreach arch,$(ALPINE_ARCHS), \
+			$(ALPINE_DEST)/$(version)/$(repo)/$(arch) \
+		) \
+	) \
+)
+
+################################################################################
+
+# vi: ft=make

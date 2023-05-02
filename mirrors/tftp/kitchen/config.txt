@@ -1,0 +1,4 @@
+[pi3+]
+kernel=vmlinuz-rpi
+initramfs initramfs-rpi
+arm_64bit=1
