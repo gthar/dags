@@ -11,6 +11,7 @@ NETBOOT_FILES_PATH = $(ALPINE_FILES_PATH)/releases/$(ARCH)/netboot-$(ALPINE_REVI
 
 ALPINE_REPO = $(PXE_URL)/$(ALPINE_FILES_PATH)/main
 MODLOOP = $(PXE_URL)/$(NETBOOT_FILES_PATH)/modloop-$(RPI)
+APKOVL= $(PXE_URL)/apkovl/kitchen.tar.gz
 
 DEST_DIR = $(TFTP_DIR)/$(SERIAL_NO)
 
@@ -38,7 +39,7 @@ $(DEST_DIR)/vmlinuz-rpi: $(MIRRORS_PATH)/$(NETBOOT_FILES_PATH)/vmlinuz-rpi
 
 $(DEST_DIR)/cmdline.txt:
 	mkdir -p $(@D)
-	echo "modules=loop,squashfs console=ttyAMA0,115200 ip=dhcp alpine_repo=$(ALPINE_REPO) modloop=$(MODLOOP)" > $@
+	echo "modules=loop,squashfs console=ttyAMA0,115200 ip=dhcp alpine_repo=$(ALPINE_REPO) modloop=$(MODLOOP) apkovl=$(APKOVL)" > $@
 
 $(DEST_DIR)/config.txt: config.txt
 	mkdir -p $(@D)
