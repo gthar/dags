@@ -1,6 +1,6 @@
 WD=/var/lib/dags/acme_renew
 
-.PHONY: all refresh_pg renew_certs
+.PHONY: all refresh_pg renew_certs caladan_sync
 
 NGINX_RELOAD=$(WD)/nginx_reload
 
@@ -8,11 +8,16 @@ all: renew_certs $(NGINX_RELOAD) refresh_pg
 
 ###############################################################################
 
+ACME_DIR=/srv/certs/acme
 DOMAIN=monotremata.xyz
-CERT_PATH=/mnt/certs/acme/$(DOMAIN)
+CERT_PATH=$(ACME_DIR)/$(DOMAIN)
 
 CERT=$(CERT_PATH)/fullchain.cer
 KEY=$(CERT_PATH)/$(DOMAIN).key
+
+###############################################################################
+
+SSH_KEY=/srv/certs/ssh/users/dags/id_ed25519
 
 ###############################################################################
 # Renew the certificates using acme.sh. Because `renew_certs` is a phony
@@ -38,6 +43,30 @@ renew_certs:
 		-e "LINODE_V4_API_KEY=$(LINODE_TOKEN)" \
 		$(DOCKER_IMAGE) \
 		$(RENEW_CMD)
+
+caladan_sync: renew_certs
+	rsync \
+		--archive \
+		--delete \
+		--compress \
+		--verbose \
+		--human-readable \
+		--rsh "ssh -i $(SSH_KEY)" \
+		--rsync-path="doas rsync" \
+		$(ACME_DIR) \
+		dags@caladan:$(ACME_DIR)
+
+fugu_sync: renew_certs
+	rsync \
+		--archive \
+		--delete \
+		--compress \
+		--verbose \
+		--human-readable \
+		--rsh "ssh -i $(SSH_KEY)" \
+		--rsync-path="doas rsync" \
+		$(ACME_DIR) \
+		dags@fugu:$(ACME_DIR)
 
 ###############################################################################
 # Reload the nginx instance running on my reverse proxy docker-compose service
