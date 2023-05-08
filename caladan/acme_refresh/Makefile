@@ -1,11 +1,11 @@
-WD=/var/lib/dags/acme_rsync
+WD=/var/lib/dags/acme_refresh
 
 .PHONY: all refresh_pg sync_certs
 
 NGINX_RELOAD=$(WD)/nginx_reload
 PROSODY_RELOAD=$(WD)/prosody_reload
 
-all: sync_certs $(NGINX_RELOAD) $(PROSODY_RELOAD) refresh_pg
+all: $(NGINX_RELOAD) $(PROSODY_RELOAD) refresh_pg
 
 ###############################################################################
 
@@ -15,31 +15,6 @@ CERT_PATH=$(ACME_DIR)/$(DOMAIN)
 FULLCHAIN=$(CERT_PATH)/fullchain.cer
 CERT=$(CERT_PATH)/$(DOMAIN).cer
 KEY=$(CERT_PATH)/$(DOMAIN).key
-
-###############################################################################
-# Sync the certificates using rsync. Because `sync` is a phony
-# target, it will be run each time, but the certificate files will only be
-# updated if a renewal happens
-
-$(FULLCHAIN): sync_certs
-$(CERT): sync_certs
-$(KEY): sync_certs
-
-RSYNCD_HOST=10.0.24.106
-RSYNCD_USER=user
-RSYNCD_PASSWORD=/srv/secrets/rsyncd_password
-
-REMOTE_ACME_PATH=rsync://$(RSYNCD_USER)@$(RSYNCD_HOST)/acme
-RSYNC_OPTS=--archive --delete --acls --xattrs --compress --verbose --human-readable
-
-sync_certs:
-	mkdir -p $(ACME_DIR)
-	@echo "running rsync"
-	rsync \
-		--password-file $(RSYNCD_PASSWORD) \
-		$(RSYNC_OPTS) \
-		$(REMOTE_ACME_PATH) \
-		$(ACME_DIR)
 
 ###############################################################################
 # Reload the nginx instance running on my reverse proxy docker-compose service
