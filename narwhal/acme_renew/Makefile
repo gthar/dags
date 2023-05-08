@@ -53,7 +53,7 @@ caladan_sync: renew_certs
 		--human-readable \
 		--rsh "ssh -i $(SSH_KEY)" \
 		--rsync-path="doas rsync" \
-		$(ACME_DIR) \
+		$(ACME_DIR)/ \
 		dags@caladan:$(ACME_DIR)
 
 fugu_sync: renew_certs
@@ -65,7 +65,7 @@ fugu_sync: renew_certs
 		--human-readable \
 		--rsh "ssh -i $(SSH_KEY)" \
 		--rsync-path="doas rsync" \
-		$(ACME_DIR) \
+		$(ACME_DIR)/ \
 		dags@fugu:$(ACME_DIR)
 
 ###############################################################################
