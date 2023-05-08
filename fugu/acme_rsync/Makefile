@@ -28,11 +28,9 @@ KEY=$(CERT_PATH)/$(DOMAIN).key
 $(CERT): $(SYNC_CERTS)
 $(KEY): $(SYNC_CERTS)
 
-RSYNCD_HOST=narwhal
+RSYNCD_HOST=10.0.24.106
 RSYNCD_USER=user
-
-GOPASS=doas -u gopass gopass
-RSYNC_PASSWORD = $(shell $(GOPASS) $(RSYNCD_HOST)/rsyncd/$(RSYNCD_USER))
+RSYNCD_PASSWORD=/srv/secrets/rsyncd_password
 
 REMOTE_ACME_PATH=rsync://$(RSYNCD_USER)@$(RSYNCD_HOST)/acme
 RSYNC_OPTS=--archive --delete --compress --verbose --human-readable
@@ -42,6 +40,7 @@ sync_certs:
 	@echo "running rsync"
 	@export RSYNC_PASSWORD=$(RSYNC_PASSWORD); \
 	rsync \
+		--password-file $(RSYNCD_PASSWORD) \
 		$(RSYNC_OPTS) \
 		$(REMOTE_ACME_PATH) \
 		$(ACME_DIR)
