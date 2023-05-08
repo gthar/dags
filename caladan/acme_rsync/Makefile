@@ -12,7 +12,8 @@ all: sync_certs $(NGINX_RELOAD) $(PROSODY_RELOAD) refresh_pg
 ACME_DIR=/srv/certs/acme
 DOMAIN=monotremata.xyz
 CERT_PATH=$(ACME_DIR)/$(DOMAIN)
-CERT=$(CERT_PATH)/fullchain.cer
+FULLCHAIN=$(CERT_PATH)/fullchain.cer
+CERT=$(CERT_PATH)/$(DOMAIN).cer
 KEY=$(CERT_PATH)/$(DOMAIN).key
 
 ###############################################################################
@@ -20,14 +21,13 @@ KEY=$(CERT_PATH)/$(DOMAIN).key
 # target, it will be run each time, but the certificate files will only be
 # updated if a renewal happens
 
+$(FULLCHAIN): sync_certs
 $(CERT): sync_certs
 $(KEY): sync_certs
 
-RSYNCD_HOST=narwhal
+RSYNCD_HOST=10.0.24.106
 RSYNCD_USER=user
-
-GOPASS=doas -u gopass gopass
-RSYNC_PASSWORD = $(shell $(GOPASS) $(RSYNCD_HOST)/rsyncd/$(RSYNCD_USER))
+RSYNCD_PASSWORD=/srv/secrets/rsyncd_password
 
 REMOTE_ACME_PATH=rsync://$(RSYNCD_USER)@$(RSYNCD_HOST)/acme
 RSYNC_OPTS=--archive --delete --acls --xattrs --compress --verbose --human-readable
@@ -35,8 +35,8 @@ RSYNC_OPTS=--archive --delete --acls --xattrs --compress --verbose --human-reada
 sync_certs:
 	mkdir -p $(ACME_DIR)
 	@echo "running rsync"
-	@export RSYNC_PASSWORD=$(RSYNC_PASSWORD); \
 	rsync \
+		--password-file $(RSYNCD_PASSWORD) \
 		$(RSYNC_OPTS) \
 		$(REMOTE_ACME_PATH) \
 		$(ACME_DIR)
@@ -51,7 +51,7 @@ sync_certs:
 
 NGINX_COMPOSE_FILE=/srv/services/www/docker-compose.yml
 
-$(NGINX_RELOAD): $(MONOTREMATA_CERT) $(MONOTREMATA_KEY)
+$(NGINX_RELOAD): $(FULLCHAIN) $(KEY)
 	mkdir -p $(@D)
 	docker-compose \
 		--file $(NGINX_COMPOSE_FILE) \
@@ -69,7 +69,7 @@ PROSODY_KEY=$(PROSODY_CERTS_PATH)/monotremata.xyz.key
 PROSODY_UID=101
 PROSODY_GID=102
 
-$(PROSODY_CERT): $(CERT)
+$(PROSODY_CERT): $(FULLCHAIN)
 	install -o $(PROSODY_UID) -g $(PROSODY_GID) -m 644 $< $@
 
 $(PROSODY_KEY): $(KEY)
