@@ -1,10 +1,10 @@
 WD=/var/lib/dags/acme_renew
 
-.PHONY: all refresh_pg renew_certs caladan_sync
+.PHONY: all refresh_pg renew_certs caladan_sync fugu_sync caladan_trigger
 
 NGINX_RELOAD=$(WD)/nginx_reload
 
-all: renew_certs $(NGINX_RELOAD) refresh_pg
+all: renew_certs caladan_trigger $(NGINX_RELOAD) refresh_pg
 
 ###############################################################################
 
@@ -67,6 +67,9 @@ fugu_sync: renew_certs
 		--rsync-path="doas rsync" \
 		$(ACME_DIR)/ \
 		dags@fugu:$(ACME_DIR)
+
+caladan_trigger: caladan_sync
+	ssh -i $(SSH_KEY) dags@caladan "doas make -C /srv/dags/caladan/acme_refresh"
 
 ###############################################################################
 # Reload the nginx instance running on my reverse proxy docker-compose service
