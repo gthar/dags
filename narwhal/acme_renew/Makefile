@@ -1,6 +1,6 @@
 WD=/var/lib/dags/acme_renew
 
-.PHONY: all refresh_pg renew_certs caladan_sync fugu_sync caladan_trigger fugu_trigger
+.PHONY: all refresh_pg renew_certs caladan_sync fugu_sync pikvm_sync caladan_trigger fugu_trigger
 
 NGINX_RELOAD=$(WD)/nginx_reload
 
@@ -67,6 +67,20 @@ fugu_sync: renew_certs
 		--rsync-path="doas rsync" \
 		$(ACME_DIR)/ \
 		dags@fugu:$(ACME_DIR)
+
+KVMD_PST_DATA = /var/lib/kvmd/pst/data
+
+pikvm_sync: renew_certs
+	rsync \
+		--archive \
+		--delete \
+		--compress \
+		--verbose \
+		--human-readable \
+		--rsh "ssh -i $(SSH_KEY)" \
+		--rsync-path="doas kvmd-pstrun -- rsync" \
+		$(ACME_DIR)/ \
+		dags@pikvm:$(KVMD_PST_DATA)/acme
 
 caladan_trigger: caladan_sync
 	ssh -i $(SSH_KEY) dags@caladan "doas make -C /srv/dags/caladan/acme_refresh"
