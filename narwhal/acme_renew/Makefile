@@ -1,10 +1,18 @@
 WD=/var/lib/dags/acme_renew
 
-.PHONY: all refresh_pg renew_certs caladan_sync fugu_sync pikvm_sync caladan_trigger fugu_trigger pivkm_trigger
+.PHONY: all refresh_pg renew_certs
 
 NGINX_RELOAD=$(WD)/nginx_reload
 
-all: renew_certs caladan_trigger fugu_trigger pikvm_trigger $(NGINX_RELOAD) refresh_pg
+CALADAN_SYNC=$(WD)/caladan_sync
+FUGU_SYNC=$(WD)/fugu_sync
+PIKVM_SYNC=$(WD)/pikvm_sync
+
+CALADAN_TRIGGER=$(WD)/caladan_trigger
+FUGU_TRIGGER=$(WD)/fugu_trigger
+PIKVM_TRIGGER=$(WD)/pikvm_trigger
+
+all: renew_certs $(CALADAN_TRIGGER) $(FUGU_TRIGGER) $(PIKVM_TRIGGER) $(NGINX_RELOAD) refresh_pg
 
 ###############################################################################
 
@@ -12,7 +20,8 @@ ACME_DIR=/srv/certs/acme
 DOMAIN=monotremata.xyz
 CERT_PATH=$(ACME_DIR)/$(DOMAIN)
 
-CERT=$(CERT_PATH)/fullchain.cer
+FULLCHAIN=$(CERT_PATH)/fullchain.cer
+CERT=$(CERT_PATH)/$(DOMAIN).cer
 KEY=$(CERT_PATH)/$(DOMAIN).key
 
 ###############################################################################
@@ -24,6 +33,7 @@ SSH_KEY=/srv/certs/ssh/users/dags/id_ed25519
 # target, it will be run each time, but the certificate files will only be
 # updated if a renewal happens
 
+$(FULLCHAIN): renew_certs
 $(CERT): renew_certs
 $(KEY): renew_certs
 
@@ -44,52 +54,54 @@ renew_certs:
 		$(DOCKER_IMAGE) \
 		$(RENEW_CMD)
 
-caladan_sync: renew_certs
-	rsync \
-		--archive \
-		--delete \
-		--compress \
-		--verbose \
-		--human-readable \
-		--rsh "ssh -i $(SSH_KEY)" \
-		--rsync-path="doas rsync" \
-		$(ACME_DIR)/ \
-		dags@caladan:$(ACME_DIR)
+###############################################################################
+# Sync the certs to remote hosts and trigger DAGs there
 
-fugu_sync: renew_certs
+RSYNC_ARGS=--archive --delete --compress --verbose --human-readable --rsh "ssh -i $(SSH_KEY)"
+
+$(CALADAN_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
+	mkdir -p $(@D)
 	rsync \
-		--archive \
-		--delete \
-		--compress \
-		--verbose \
-		--human-readable \
-		--rsh "ssh -i $(SSH_KEY)" \
+		$(RSYNC_ARGS) \
 		--rsync-path="doas rsync" \
-		$(ACME_DIR)/ \
+		$^ \
+		dags@caladan:$(ACME_DIR)
+	touch $@
+
+$(FUGU_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
+	mkdir -p $(@D)
+	rsync \
+		$(RSYNC_ARGS) \
+		--rsync-path="doas rsync" \
+		$^ \
 		dags@fugu:$(ACME_DIR)
+	touch $@
 
 KVMD_PST_DATA = /var/lib/kvmd/pst/data
 
-pikvm_sync: renew_certs
+$(PIKVM_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
+	mkdir -p $(@D)
 	rsync \
-		--archive \
-		--delete \
-		--compress \
-		--verbose \
-		--human-readable \
-		--rsh "ssh -i $(SSH_KEY)" \
+		$(RSYNC_ARGS) \
 		--rsync-path="doas kvmd-pstrun -- rsync" \
-		$(ACME_DIR)/ \
+		$^ \
 		dags@pikvm:$(KVMD_PST_DATA)/acme
+	touch $@
 
-caladan_trigger: caladan_sync
-	ssh -i $(SSH_KEY) dags@caladan "doas make -C /srv/dags/caladan/acme_refresh"
+define remote_dag_trigger
+	mkdir -p $(@D)
+	ssh -i $(SSH_KEY) dags@$(1) "doas /srv/dags/$(1)/$(2)/run.sh"
+	touch $@
+endef
 
-fugu_trigger: fugu_sync
-	ssh -i $(SSH_KEY) dags@fugu "doas gmake -C /srv/dags/fugu/acme_refresh"
+$(CALADAN_TRIGGER): $(CALADAN_SYNC)
+	$(call remote_dag_trigger, caladan, acme_refresh)
 
-pikvm_trigger: pikvm_sync
-	ssh -i $(SSH_KEY) dags@pikvm "doas /srv/dags/pikvm/acme_refresh/run.sh"
+$(FUGU_TRIGGER): $(FUGU_SYNC)
+	$(call remote_dag_trigger, fugu, acme_refresh)
+
+$(PIKVM_TRIGGER): $(PIKVM_SYNC)
+	$(call remote_dag_trigger, pikvm, acme_refresh)
 
 ###############################################################################
 # Reload the nginx instance running on my reverse proxy docker-compose service
@@ -102,7 +114,7 @@ pikvm_trigger: pikvm_sync
 
 NGINX_COMPOSE_FILE=/srv/services/reverse_proxy/docker-compose.yml
 
-$(NGINX_RELOAD): $(CERT) $(KEY)
+$(NGINX_RELOAD): $(FULLCHAIN) $(KEY)
 	mkdir -p $(@D)
 	docker-compose \
 		--file $(NGINX_COMPOSE_FILE) \
@@ -118,7 +130,7 @@ PG_SSL_PATH=/mnt/docker_volumes/postgres/ssl
 PG_CERT=$(PG_SSL_PATH)/server.crt
 PG_KEY=$(PG_SSL_PATH)/server.key
 
-$(PG_CERT): $(CERT)
+$(PG_CERT): $(FULLCHAIN)
 	mkdir -p $(@D)
 	rsync --copy-links $< $@
 
