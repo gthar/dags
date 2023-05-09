@@ -1,10 +1,10 @@
 WD=/var/lib/dags/acme_renew
 
-.PHONY: all refresh_pg renew_certs caladan_sync fugu_sync pikvm_sync caladan_trigger fugu_trigger
+.PHONY: all refresh_pg renew_certs caladan_sync fugu_sync pikvm_sync caladan_trigger fugu_trigger pivkm_trigger
 
 NGINX_RELOAD=$(WD)/nginx_reload
 
-all: renew_certs caladan_trigger fugu_trigger $(NGINX_RELOAD) refresh_pg
+all: renew_certs caladan_trigger fugu_trigger pikvm_trigger $(NGINX_RELOAD) refresh_pg
 
 ###############################################################################
 
@@ -87,6 +87,9 @@ caladan_trigger: caladan_sync
 
 fugu_trigger: fugu_sync
 	ssh -i $(SSH_KEY) dags@fugu "doas gmake -C /srv/dags/fugu/acme_refresh"
+
+pikvm_trigger: pikvm_sync
+	ssh -i $(SSH_KEY) dags@pikvm "doas /srv/dags/pikvm/acme_refresh/run.sh"
 
 ###############################################################################
 # Reload the nginx instance running on my reverse proxy docker-compose service
