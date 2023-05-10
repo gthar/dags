@@ -65,7 +65,7 @@ $(CALADAN_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
 		$(RSYNC_ARGS) \
 		--rsync-path="doas rsync" \
 		$^ \
-		dags@caladan:$(ACME_DIR)
+		dags@caladan:$(CERT_PATH)
 	touch $@
 
 $(FUGU_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
@@ -74,7 +74,7 @@ $(FUGU_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
 		$(RSYNC_ARGS) \
 		--rsync-path="doas rsync" \
 		$^ \
-		dags@fugu:$(ACME_DIR)
+		dags@fugu:$(CERT_PATH)
 	touch $@
 
 KVMD_PST_DATA = /var/lib/kvmd/pst/data
@@ -85,7 +85,7 @@ $(PIKVM_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
 		$(RSYNC_ARGS) \
 		--rsync-path="doas kvmd-pstrun -- rsync" \
 		$^ \
-		dags@pikvm:$(KVMD_PST_DATA)/acme
+		dags@pikvm:$(KVMD_PST_DATA)/acme/$(DOMAIN)
 	touch $@
 
 define remote_dag_trigger
