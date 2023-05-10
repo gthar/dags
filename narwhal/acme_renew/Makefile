@@ -95,13 +95,13 @@ define remote_dag_trigger
 endef
 
 $(CALADAN_TRIGGER): $(CALADAN_SYNC)
-	$(call remote_dag_trigger, caladan, acme_refresh)
+	$(call remote_dag_trigger,caladan,acme_refresh)
 
 $(FUGU_TRIGGER): $(FUGU_SYNC)
-	$(call remote_dag_trigger, fugu, acme_refresh)
+	$(call remote_dag_trigger,fugu,acme_refresh)
 
 $(PIKVM_TRIGGER): $(PIKVM_SYNC)
-	$(call remote_dag_trigger, pikvm, acme_refresh)
+	$(call remote_dag_trigger,pikvm,acme_refresh)
 
 ###############################################################################
 # Reload the nginx instance running on my reverse proxy docker-compose service
