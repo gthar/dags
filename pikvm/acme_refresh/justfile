@@ -1,0 +1,7 @@
+dag := justfile_directory()
+
+run:
+    kvmd-pstrun -- make --directory "{{dag}}"
+
+render:
+    make --file ../../common/render-dag.make

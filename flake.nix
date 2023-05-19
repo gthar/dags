@@ -8,7 +8,8 @@
       let pkgs = nixpkgs.legacyPackages.${system};
       in {
         devShells.default = pkgs.mkShell {
-          packages = [ pkgs.gnumake pkgs.makefile2graph pkgs.graphviz ];
+          packages =
+            [ pkgs.gnumake pkgs.makefile2graph pkgs.graphviz pkgs.just ];
         };
       });
 }

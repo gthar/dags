@@ -1,0 +1,7 @@
+dag := justfile_directory()
+
+run:
+    make --directory "{{dag}}"
+
+render:
+    make --file ../../common/render-dag.make
