@@ -33,26 +33,39 @@ SSH_KEY=/srv/certs/ssh/users/dags/id_ed25519
 # target, it will be run each time, but the certificate files will only be
 # updated if a renewal happens
 
+CERT_DOMAINS=-d $(DOMAIN) -d '*.$(DOMAIN)' -d '*.narwhal.$(DOMAIN)' -d '*.caladan.$(DOMAIN)' -d '*.xmpp.$(DOMAIN)'
+
 $(FULLCHAIN): renew_certs
 $(CERT): renew_certs
 $(KEY): renew_certs
 
-GOPASS=doas -u gopass gopass
-LINODE_TOKEN = $(shell $(GOPASS) linode.com/token)
+HETZNER_TOKEN=/srv/secrets/hetzner_token
 
 DOCKER_IMAGE=neilpang/acme.sh
 ACME_DATA_DIR=/mnt/docker_volumes/acmesh/data
 
-RENEW_CMD="/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh" --config-home "/acme.sh"
+ACMESH=docker run --rm -it \
+	-v $(ACME_DATA_DIR):/acme.sh \
+	-v $(CERT_PATH):/acme.sh/$(DOMAIN) \
+	-e "HETZNER_Token=$$(cat $(HETZNER_TOKEN))" \
+	$(DOCKER_IMAGE) \
+	/root/.acme.sh/acme.sh 
 
-renew_certs:
+
+RENEW_CMD=--cron --home /root/.acme.sh --config-home /acme.sh
+
+# DNS_ARGS=--dns dns_linode_v4 --dnssleep 900
+DNS_ARGS=--dns dns_hetzner
+ISSUE_CMD=--issue $(DNS_ARGS) $(CERT_DOMAINS) --server letsencrypt
+
+renew_certs: $(HETZNER_TOKEN) $(ACME_DATA_DIR)/account.conf
 	@echo "renewing certs"
-	@docker run --rm -it \
-		-v $(ACME_DATA_DIR):/acme.sh \
-		-v $(CERT_PATH):/acme.sh/$(DOMAIN) \
-		-e "LINODE_V4_API_KEY=$(LINODE_TOKEN)" \
-		$(DOCKER_IMAGE) \
-		$(RENEW_CMD)
+	$(ACMESH) $(RENEW_CMD)
+
+$(ACME_DATA_DIR)/account.conf: $(HETZNER_TOKEN)
+	@echo "issuing certificate and saving acme.sh account configuration"
+	@mkdir -p $(@D)
+	$(ACMESH) $(ISSUE_CMD)
 
 ###############################################################################
 # Sync the certs to remote hosts and trigger DAGs there
@@ -77,7 +90,7 @@ $(FUGU_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
 		dags@fugu:$(CERT_PATH)
 	touch $@
 
-KVMD_PST_DATA = /var/lib/kvmd/pst/data
+KVMD_PST_DATA=/var/lib/kvmd/pst/data
 
 $(PIKVM_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
 	mkdir -p $(@D)

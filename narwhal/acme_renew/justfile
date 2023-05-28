@@ -5,3 +5,18 @@ run:
 
 render:
     make --file ../../common/render-dag.make
+
+acme_data_dir := "/mnt/docker_volumes/acmesh/data"
+domain := "monotremata.xyz"
+certs_path := "/srv/certs/acme"
+linode_token := `cat /srv/secrets/linode_token`
+hetzner_token := `cat /srv/secrets/hetzner_token`
+
+acmesh *args:
+    docker run --rm -it \
+        -v {{acme_data_dir}}:/acme.sh \
+        -v {{certs_path}}/{{domain}}:/acme.sh/{{domain}} \
+        -e "LINODE_V4_API_KEY={{linode_token}}" \
+        -e "HETZNER_Token={{hetzner_token}}" \
+        neilpang/acme.sh \
+        /root/.acme.sh/acme.sh {{args}}
