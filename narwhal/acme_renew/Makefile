@@ -1,18 +1,20 @@
 WD=/var/lib/dags/acme_renew
 
-.PHONY: all refresh_pg renew_certs
+.PHONY: all refresh_pg renew_certs lb_sync
 
 NGINX_RELOAD=$(WD)/nginx_reload
 
 CALADAN_SYNC=$(WD)/caladan_sync
 FUGU_SYNC=$(WD)/fugu_sync
 PIKVM_SYNC=$(WD)/pikvm_sync
+LB_SYNC=$(WD)/lb_sync
 
 CALADAN_TRIGGER=$(WD)/caladan_trigger
 FUGU_TRIGGER=$(WD)/fugu_trigger
 PIKVM_TRIGGER=$(WD)/pikvm_trigger
+LB_TRIGGER=$(WD)/lb_trigger
 
-all: renew_certs $(CALADAN_TRIGGER) $(FUGU_TRIGGER) $(PIKVM_TRIGGER) $(NGINX_RELOAD) refresh_pg
+all: renew_certs $(CALADAN_TRIGGER) $(FUGU_TRIGGER) $(PIKVM_TRIGGER) $(LB_TRIGGER) $(NGINX_RELOAD) refresh_pg
 
 ###############################################################################
 
@@ -90,6 +92,15 @@ $(FUGU_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
 		dags@fugu:$(CERT_PATH)
 	touch $@
 
+$(LB_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
+	mkdir -p $(@D)
+	rsync \
+		$(RSYNC_ARGS) \
+		--rsync-path="doas rsync" \
+		$^ \
+		dags@lb:$(CERT_PATH)
+	touch $@
+
 KVMD_PST_DATA=/var/lib/kvmd/pst/data
 
 $(PIKVM_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
@@ -115,6 +126,9 @@ $(FUGU_TRIGGER): $(FUGU_SYNC)
 
 $(PIKVM_TRIGGER): $(PIKVM_SYNC)
 	$(call remote_dag_trigger,pikvm,acme_refresh)
+
+$(LB_TRIGGER): $(LB_SYNC)
+	$(call remote_dag_trigger,lb,acme_refresh)
 
 ###############################################################################
 # Reload the nginx instance running on my reverse proxy docker-compose service
