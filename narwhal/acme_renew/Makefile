@@ -143,7 +143,7 @@ NGINX_COMPOSE_FILE=/srv/services/reverse_proxy/docker-compose.yml
 
 $(NGINX_RELOAD): $(FULLCHAIN) $(KEY)
 	mkdir -p $(@D)
-	docker-compose \
+	docker compose \
 		--file $(NGINX_COMPOSE_FILE) \
 		exec nginx \
 		nginx -s reload
