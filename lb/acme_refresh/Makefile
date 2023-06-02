@@ -2,7 +2,7 @@ WD=/var/lib/dags/acme_refresh
 
 ###############################################################################
 
-ACME_DIR=/srv/certs/acme
+ACME_DIR=/etc/nginx/acme
 DOMAIN=monotremata.xyz
 CERT_PATH=$(ACME_DIR)/$(DOMAIN)
 FULLCHAIN=$(CERT_PATH)/fullchain.cer
