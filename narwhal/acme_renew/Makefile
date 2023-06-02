@@ -96,7 +96,7 @@ $(LB_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
 		$(RSYNC_ARGS) \
 		--rsync-path="doas rsync" \
 		$^ \
-		dags@lb:/etc/nginx/$(DOMAIN)
+		dags@lb:/etc/nginx/acme/$(DOMAIN)
 	touch $@
 
 KVMD_PST_DATA=/var/lib/kvmd/pst/data
