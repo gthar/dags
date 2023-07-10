@@ -7,12 +7,13 @@ NGINX_RELOAD=$(WD)/nginx_reload
 CALADAN_SYNC=$(WD)/caladan_sync
 FUGU_SYNC=$(WD)/fugu_sync
 LB_SYNC=$(WD)/lb_sync
+SURICATA_SYNC=$(WD)/suricata_sync
 
 CALADAN_TRIGGER=$(WD)/caladan_trigger
 FUGU_TRIGGER=$(WD)/fugu_trigger
 LB_TRIGGER=$(WD)/lb_trigger
 
-all: renew_certs $(CALADAN_TRIGGER) $(FUGU_TRIGGER) $(LB_TRIGGER) $(NGINX_RELOAD) refresh_pg
+all: $(SURICATA_SYNC) renew_certs $(CALADAN_TRIGGER) $(FUGU_TRIGGER) $(LB_TRIGGER) $(NGINX_RELOAD) refresh_pg
 
 ###############################################################################
 
@@ -89,6 +90,16 @@ $(FUGU_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
 		$^ \
 		dags@fugu:$(CERT_PATH)
 	touch $@
+
+$(SURICATA_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
+	mkdir -p $(@D)
+	rsync \
+		$(RSYNC_ARGS) \
+		--rsync-path="doas rsync" \
+		$^ \
+		dags@suricata:$(CERT_PATH)
+	touch $@
+
 
 $(LB_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
 	mkdir -p $(@D)
