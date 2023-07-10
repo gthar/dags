@@ -12,8 +12,9 @@ SURICATA_SYNC=$(WD)/suricata_sync
 CALADAN_TRIGGER=$(WD)/caladan_trigger
 FUGU_TRIGGER=$(WD)/fugu_trigger
 LB_TRIGGER=$(WD)/lb_trigger
+SURICATA_TRIGGER=$(WD)/suricata_trigger
 
-all: $(SURICATA_SYNC) renew_certs $(CALADAN_TRIGGER) $(FUGU_TRIGGER) $(LB_TRIGGER) $(NGINX_RELOAD) refresh_pg
+all: renew_certs $(CALADAN_TRIGGER) $(FUGU_TRIGGER) $(LB_TRIGGER) $(SURICATA_TRIGGER) $(NGINX_RELOAD) refresh_pg
 
 ###############################################################################
 
@@ -126,6 +127,9 @@ $(FUGU_TRIGGER): $(FUGU_SYNC)
 
 $(LB_TRIGGER): $(LB_SYNC)
 	$(call remote_dag_trigger,lb,acme_refresh)
+
+$(SURICATA_TRIGGER): $(SURICATA_SYNC)
+	$(call remote_dag_trigger,suricata,acme_refresh)
 
 ###############################################################################
 # Reload the nginx instance running on my reverse proxy docker-compose service
