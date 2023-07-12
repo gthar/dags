@@ -15,20 +15,20 @@ all: $(SMTPD_RESTART) $(DOVECOT_RELOAD)
 
 ACME_DIR=/srv/certs/acme
 DOMAIN=monotremata.xyz
-CERT_PATH=$(ACME_DIR)/$(DOMAIN)
-CERT=$(CERT_PATH)/fullchain.pem
-KEY=$(CERT_PATH)/key.pem
+MAIL_CERT_PATH=$(ACME_DIR)/mail.$(DOMAIN)
+MAIL_CERT=$(MAIL_CERT_PATH)/fullchain.pem
+MAIL_KEY=$(MAIL_CERT_PATH)/key.pem
 
 ###############################################################################
 
 SSL_PATH=/etc/ssl
-CERT_DEST=$(SSL_PATH)/monotremata.xyz.fullchain.pem
-KEY_DEST=$(SSL_PATH)/private/monotremata.xyz.key
+CERT_DEST=$(SSL_PATH)/fullchain.pem
+KEY_DEST=$(SSL_PATH)/private/key.pem
 
-$(CERT_DEST): $(CERT)
+$(CERT_DEST): $(MAIL_CERT)
 	install -m 444 $< $@
 
-$(KEY_DEST): $(KEY)
+$(KEY_DEST): $(MAIL_KEY)
 	install -m 400 $< $@
 
 ###############################################################################
