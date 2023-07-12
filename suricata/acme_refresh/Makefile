@@ -2,21 +2,21 @@
 
 VAULT_TLS=/srv/certs/vault
 ACME_DIR=/srv/certs/acme
-DOMAIN=monotremata.xyz
+DOMAIN=vault.monotremata.xyz
 
 CERT_PATH=$(ACME_DIR)/$(DOMAIN)
-CERT=$(CERT_PATH)/$(DOMAIN).cer
-KEY=$(CERT_PATH)/$(DOMAIN).key
+CERT=$(CERT_PATH)/cert.pem
+KEY=$(CERT_PATH)/key.pem
 
-VAULT_CERT=$(VAULT_TLS)/tls.crt
-VAULT_KEY=$(VAULT_TLS)/tls.key
+DEST_CERT=$(VAULT_TLS)/tls.crt
+DEST_KEY=$(VAULT_TLS)/tls.key
 
-all: $(VAULT_CERT) $(VAULT_KEY)
+all: $(DEST_CERT) $(DEST_KEY)
 
-$(VAULT_CERT): $(CERT)
+$(DEST_CERT): $(CERT)
 	mkdir -p $(@D)
 	install -o vault -g vault -m 600 $^ $@
 
-$(VAULT_KEY): $(KEY)
+$(DEST_KEY): $(KEY)
 	mkdir -p $(@D)
 	install -o vault -g vault -m 600 $^ $@
