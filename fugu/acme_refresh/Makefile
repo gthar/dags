@@ -16,8 +16,8 @@ all: $(SMTPD_RESTART) $(DOVECOT_RELOAD)
 ACME_DIR=/srv/certs/acme
 DOMAIN=monotremata.xyz
 CERT_PATH=$(ACME_DIR)/$(DOMAIN)
-CERT=$(CERT_PATH)/fullchain.cer
-KEY=$(CERT_PATH)/$(DOMAIN).key
+CERT=$(CERT_PATH)/fullchain.pem
+KEY=$(CERT_PATH)/key.pem
 
 ###############################################################################
 
