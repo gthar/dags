@@ -31,6 +31,11 @@ MAIL_FULLCHAIN=$(MAIL_CERT_PATH)/fullchain.pem
 MAIL_CERT=$(MAIL_CERT_PATH)/cert.pem
 MAIL_KEY=$(MAIL_CERT_PATH)/key.pem
 
+VAULT_CERT_PATH=$(ACME_DIR)/vault.$(DOMAIN)
+VAULT_FULLCHAIN=$(VAULT_CERT_PATH)/fullchain.pem
+VAULT_CERT=$(VAULT_CERT_PATH)/cert.pem
+VAULT_KEY=$(VAULT_CERT_PATH)/key.pem
+
 ###############################################################################
 
 SSH_KEY=/srv/certs/ssh/users/dags/id_ed25519
@@ -91,13 +96,13 @@ $(FUGU_SYNC): $(MAIL_FULLCHAIN) $(MAIL_CERT) $(MAIL_KEY)
 		dags@fugu:$(MAIL_CERT_PATH)
 	touch $@
 
-$(SURICATA_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
+$(SURICATA_SYNC): $(VAULT_FULLCHAIN) $(VAULT_CERT) $(VAULT_KEY)
 	mkdir -p $(@D)
 	rsync \
 		$(RSYNC_ARGS) \
 		--rsync-path="doas rsync" \
 		$^ \
-		dags@suricata:$(CERT_PATH)
+		dags@suricata:$(VAULT_CERT_PATH)
 	touch $@
 
 
