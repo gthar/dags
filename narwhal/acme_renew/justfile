@@ -42,6 +42,14 @@ install-vault:
         --key-file /certs/vault.{{domain}}/key.pem \
         --fullchain-file /certs/vault.{{domain}}/fullchain.pem
 
+install-mail:
+    just acmesh \
+        --install-cert \
+        -d vault.{{domain}} \
+        --cert-file /certs/mail.{{domain}}/cert.pem \
+        --key-file /certs/mail.{{domain}}/key.pem \
+        --fullchain-file /certs/mail.{{domain}}/fullchain.pem
+
 issue-monotremata-xyz:
     just issue \
         -d {{domain}} \
@@ -56,3 +64,8 @@ issue-vault:
         -d 'vault.{{domain}}' \
         -d '*.vault.{{domain}}'
     just install-vault
+
+issue-mail:
+    just issue \
+        -d 'mail.{{domain}}'
+    just install-mail

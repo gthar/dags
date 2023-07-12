@@ -20,11 +20,16 @@ all: renew_certs $(CALADAN_TRIGGER) $(FUGU_TRIGGER) $(LB_TRIGGER) $(SURICATA_TRI
 
 ACME_DIR=/srv/certs/acme
 DOMAIN=monotremata.xyz
-CERT_PATH=$(ACME_DIR)/$(DOMAIN)
 
+CERT_PATH=$(ACME_DIR)/$(DOMAIN)
 FULLCHAIN=$(CERT_PATH)/fullchain.pem
 CERT=$(CERT_PATH)/cert.pem
 KEY=$(CERT_PATH)/key.pem
+
+MAIL_CERT_PATH=$(ACME_DIR)/mail.$(DOMAIN)
+MAIL_FULLCHAIN=$(MAIL_CERT_PATH)/fullchain.pem
+MAIL_CERT=$(MAIL_CERT_PATH)/cert.pem
+MAIL_KEY=$(MAIL_CERT_PATH)/key.pem
 
 ###############################################################################
 
@@ -77,13 +82,13 @@ $(CALADAN_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
 		dags@caladan:$(CERT_PATH)
 	touch $@
 
-$(FUGU_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
+$(FUGU_SYNC): $(MAIL_FULLCHAIN) $(MAIL_CERT) $(MAIL_KEY)
 	mkdir -p $(@D)
 	rsync \
 		$(RSYNC_ARGS) \
 		--rsync-path="doas rsync" \
 		$^ \
-		dags@fugu:$(CERT_PATH)
+		dags@fugu:$(MAIL_CERT_PATH)
 	touch $@
 
 $(SURICATA_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
