@@ -1,6 +1,6 @@
 .PHONY: all
 
-VAULT_TLS=/opt/vault/tls
+VAULT_TLS=/srv/certs/vault
 ACME_DIR=/srv/certs/acme
 DOMAIN=monotremata.xyz
 
