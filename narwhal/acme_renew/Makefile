@@ -22,9 +22,9 @@ ACME_DIR=/srv/certs/acme
 DOMAIN=monotremata.xyz
 CERT_PATH=$(ACME_DIR)/$(DOMAIN)
 
-FULLCHAIN=$(CERT_PATH)/fullchain.cer
-CERT=$(CERT_PATH)/$(DOMAIN).cer
-KEY=$(CERT_PATH)/$(DOMAIN).key
+FULLCHAIN=$(CERT_PATH)/fullchain.pem
+CERT=$(CERT_PATH)/cert.pem
+KEY=$(CERT_PATH)/key.pem
 
 ###############################################################################
 
@@ -58,16 +58,10 @@ RENEW_CMD=--cron --home /root/.acme.sh --config-home /acme.sh
 
 # DNS_ARGS=--dns dns_linode_v4 --dnssleep 900
 DNS_ARGS=--dns dns_hetzner
-ISSUE_CMD=--issue $(DNS_ARGS) $(CERT_DOMAINS) --server letsencrypt
 
-renew_certs: $(HETZNER_TOKEN) $(ACME_DATA_DIR)/account.conf
+renew_certs: $(HETZNER_TOKEN)
 	@echo "renewing certs"
 	$(ACMESH) $(RENEW_CMD)
-
-$(ACME_DATA_DIR)/account.conf: $(HETZNER_TOKEN)
-	@echo "issuing certificate and saving acme.sh account configuration"
-	@mkdir -p $(@D)
-	$(ACMESH) $(ISSUE_CMD)
 
 ###############################################################################
 # Sync the certs to remote hosts and trigger DAGs there
@@ -130,25 +124,6 @@ $(LB_TRIGGER): $(LB_SYNC)
 
 $(SURICATA_TRIGGER): $(SURICATA_SYNC)
 	$(call remote_dag_trigger,suricata,acme_refresh)
-
-###############################################################################
-# Reload the nginx instance running on my reverse proxy docker-compose service
-# so that it uses the new certificates.
-# The target is just an empty sentinel target with no meaningful data other
-# than its modification date.
-# So far, the nginx instance running on `narwhal` only uses the `monotremata`
-# and `narwhal` certificates, so it only needs to be reloaded if those are
-# updated
-
-NGINX_COMPOSE_FILE=/srv/services/reverse_proxy/docker-compose.yml
-
-$(NGINX_RELOAD): $(FULLCHAIN) $(KEY)
-	mkdir -p $(@D)
-	docker compose \
-		--file $(NGINX_COMPOSE_FILE) \
-		exec nginx \
-		nginx -s reload
-	touch $@
 
 ###############################################################################
 # Copy the certificate for the postgresql domain to the folder where postgre

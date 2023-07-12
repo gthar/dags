@@ -9,14 +9,50 @@ render:
 acme_data_dir := "/mnt/docker_volumes/acmesh/data"
 domain := "monotremata.xyz"
 certs_path := "/srv/certs/acme"
-linode_token := `cat /srv/secrets/linode_token`
 hetzner_token := `cat /srv/secrets/hetzner_token`
 
 acmesh *args:
     docker run --rm -it \
         -v {{acme_data_dir}}:/acme.sh \
-        -v {{certs_path}}/{{domain}}:/acme.sh/{{domain}} \
-        -e "LINODE_V4_API_KEY={{linode_token}}" \
+        -v {{certs_path}}:/certs \
         -e "HETZNER_Token={{hetzner_token}}" \
         neilpang/acme.sh \
         /root/.acme.sh/acme.sh {{args}}
+
+issue *args:
+    just acmesh \
+        --issue \
+        --dns dns_hetzner \
+        --server letsencrypt \
+        {{args}}
+
+install-monotremata-xyz:
+    just acmesh \
+        --install-cert \
+        -d {{domain}} \
+        --cert-file /certs/{{domain}}/cert.pem \
+        --key-file /certs/{{domain}}/key.pem \
+        --fullchain-file /certs/{{domain}}/fullchain.pem
+
+install-vault:
+    just acmesh \
+        --install-cert \
+        -d vault.{{domain}} \
+        --cert-file /certs/vault.{{domain}}/cert.pem \
+        --key-file /certs/vault.{{domain}}/key.pem \
+        --fullchain-file /certs/vault.{{domain}}/fullchain.pem
+
+issue-monotremata-xyz:
+    just issue \
+        -d {{domain}} \
+        -d '*.{{domain}}' \
+        -d '*.narwhal.{{domain}}' \
+        -d '*.caladan.{{domain}}' \
+        -d '*.xmpp.{{domain}}'
+    just install-monotremata-xyz
+
+issue-vault:
+    just issue \
+        -d 'vault.{{domain}}' \
+        -d '*.vault.{{domain}}'
+    just install-vault
