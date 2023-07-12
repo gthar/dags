@@ -12,9 +12,9 @@ all: $(NGINX_RELOAD) $(PROSODY_RELOAD) refresh_pg
 ACME_DIR=/srv/certs/acme
 DOMAIN=monotremata.xyz
 CERT_PATH=$(ACME_DIR)/$(DOMAIN)
-FULLCHAIN=$(CERT_PATH)/fullchain.cer
-CERT=$(CERT_PATH)/$(DOMAIN).cer
-KEY=$(CERT_PATH)/$(DOMAIN).key
+FULLCHAIN=$(CERT_PATH)/fullchain.pem
+CERT=$(CERT_PATH)/cert.pem
+KEY=$(CERT_PATH)/key.pem
 
 ###############################################################################
 # Reload the nginx instance running on my reverse proxy docker-compose service
@@ -54,7 +54,7 @@ PROSODY_COMPOSE_FILE=/srv/services/xmpp/docker-compose.yml
 
 $(PROSODY_RELOAD): $(PROSODY_CERT) $(PROSODY_KEY)
 	mkdir -p $(@D)
-	docker-compose --file $(PROSODY_COMPOSE_FILE) exec \
+	docker compose --file $(PROSODY_COMPOSE_FILE) exec \
 		prosody prosodyctl reload
 	touch $@
 
