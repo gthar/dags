@@ -15,8 +15,8 @@ all: $(VAULT_CERT) $(VAULT_KEY)
 
 $(VAULT_CERT): $(CERT)
 	mkdir -p $(@D)
-	install -m 600 $^ $@
+	install -o vault -g vault -m 600 $^ $@
 
 $(VAULT_KEY): $(KEY)
 	mkdir -p $(@D)
-	install -m 600 $^ $@
+	install -o vault -g vault -m 600 $^ $@
