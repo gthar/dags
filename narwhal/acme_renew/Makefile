@@ -14,7 +14,7 @@ FUGU_TRIGGER=$(WD)/fugu_trigger
 LB_TRIGGER=$(WD)/lb_trigger
 SURICATA_TRIGGER=$(WD)/suricata_trigger
 
-all: renew_certs $(CALADAN_TRIGGER) $(FUGU_TRIGGER) $(LB_TRIGGER) $(SURICATA_TRIGGER) $(NGINX_RELOAD) refresh_pg
+all: renew_certs $(CALADAN_TRIGGER) $(FUGU_TRIGGER) $(LB_TRIGGER) $(SURICATA_TRIGGER) $(NGINX_RELOAD) refresh_pg refresh_vault
 
 ###############################################################################
 
@@ -152,3 +152,20 @@ $(PG_KEY): $(KEY)
 	rsync --copy-links $< $@
 
 refresh_pg: $(PG_CERT) $(PG_KEY)
+
+###############################################################################
+# Copy Vault certificate
+
+VAULT_DEST_PATH=/srv/certs/vault
+VAULT_DEST_CERT=$(VAULT_DEST_PATH)/tls.crt
+VAULT_DEST_KEY=$(VAULT_DEST_PATH)/tls.key
+
+$(VAULT_DEST_CERT): $(VAULT_CERT)
+	mkdir -p $(@D)
+	install -o vault -g vault -m 600 $^ $@
+
+$(VAULT_DEST_KEY): $(VAULT_KEY)
+	mkdir -p $(@D)
+	install -o vault -g vault -m 600 $^ $@
+
+refresh_vault: $(VAULT_DEST_CERT) $(VAULT_DEST_KEY)
