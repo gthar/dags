@@ -156,7 +156,7 @@ refresh_pg: $(PG_CERT) $(PG_KEY)
 ###############################################################################
 # Copy Vault certificate
 
-VAULT_DEST_PATH=/srv/certs/vault
+VAULT_DEST_PATH=/srv/certs/vault/tls
 VAULT_DEST_CERT=$(VAULT_DEST_PATH)/tls.crt
 VAULT_DEST_KEY=$(VAULT_DEST_PATH)/tls.key
 
