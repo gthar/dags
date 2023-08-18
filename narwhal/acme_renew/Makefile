@@ -31,6 +31,11 @@ MAIL_FULLCHAIN=$(MAIL_CERT_PATH)/fullchain.pem
 MAIL_CERT=$(MAIL_CERT_PATH)/cert.pem
 MAIL_KEY=$(MAIL_CERT_PATH)/key.pem
 
+CUINA_CERT_PATH=$(ACME_DIR)/cuina.$(DOMAIN)
+CUINA_FULLCHAIN=$(MAIL_CERT_PATH)/fullchain.pem
+CUINA_CERT=$(MAIL_CERT_PATH)/cert.pem
+CUINA_KEY=$(MAIL_CERT_PATH)/key.pem
+
 VAULT_CERT_PATH=$(ACME_DIR)/vault.$(DOMAIN)
 VAULT_FULLCHAIN=$(VAULT_CERT_PATH)/fullchain.pem
 VAULT_CERT=$(VAULT_CERT_PATH)/cert.pem
@@ -106,13 +111,18 @@ $(SURICATA_SYNC): $(VAULT_FULLCHAIN) $(VAULT_CERT) $(VAULT_KEY)
 	touch $@
 
 
-$(LB_SYNC): $(FULLCHAIN) $(CERT) $(KEY)
+$(LB_SYNC): $(FULLCHAIN) $(CERT) $(KEY) $(CUINA_FULLCHAIN) $(CUINA_CERT) $(CUINA_KEY)
 	mkdir -p $(@D)
 	rsync \
 		$(RSYNC_ARGS) \
 		--rsync-path="doas rsync" \
-		$^ \
+		$(FULLCHAIN) $(CERT) $(KEY) \
 		dags@lb:/etc/nginx/acme/$(DOMAIN)
+	rsync \
+		$(RSYNC_ARGS) \
+		--rsync-path="doas rsync" \
+		$(CUINA_FULLCHAIN) $(CUINA_CERT) $(CUINA_KEY) \
+		dags@lb:/etc/nginx/acme/cuina.$(DOMAIN)
 	touch $@
 
 KVMD_PST_DATA=/var/lib/kvmd/pst/data

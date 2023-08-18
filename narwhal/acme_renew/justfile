@@ -45,7 +45,7 @@ install-vault:
 install-mail:
     just acmesh \
         --install-cert \
-        -d vault.{{domain}} \
+        -d mail.{{domain}} \
         --cert-file /certs/mail.{{domain}}/cert.pem \
         --key-file /certs/mail.{{domain}}/key.pem \
         --fullchain-file /certs/mail.{{domain}}/fullchain.pem
@@ -69,3 +69,18 @@ issue-mail:
     just issue \
         -d 'mail.{{domain}}'
     just install-mail
+
+install-cuina:
+    mkdir -p {{certs_path}}/cuina.monotremata.xyz
+    just acmesh \
+        --install-cert \
+        -d cuina.{{domain}} \
+        --cert-file /certs/cuina.{{domain}}/cert.pem \
+        --key-file /certs/cuina.{{domain}}/key.pem \
+        --fullchain-file /certs/cuina.{{domain}}/fullchain.pem
+
+issue-cuina:
+    just issue \
+        -d 'cuina.{{domain}}' \
+        -d '*.cuina.{{domain}}'
+    just install-cuina
